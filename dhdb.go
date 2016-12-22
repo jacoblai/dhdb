@@ -18,7 +18,7 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	var (
 		port = flag.Int("p", 6380, "dhdb port munber")
-		pass = flag.String("s", "icoolpy.com", "dhdb client auth password")
+		pass = flag.String("a", "icoolpy.com", "dhdb client auth password")
 	)
 	flag.Parse()
 
