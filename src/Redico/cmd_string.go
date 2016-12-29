@@ -10,6 +10,8 @@ func commandsString(m *Redico, srv *redeo.Server) {
 	srv.HandleFunc("GET", m.cmdGet)
 	srv.HandleFunc("SET", m.cmdSet)
 	srv.HandleFunc("INCR", m.cmdIncr)
+	srv.HandleFunc("RENAME", m.cmdRename)
+	srv.HandleFunc("APPEND", m.cmdAppend)
 }
 
 // SET
@@ -134,5 +136,62 @@ func (m *Redico) cmdIncr(out *redeo.Responder, r *redeo.Request) error {
 		}
 		// Don't touch TTL
 		out.WriteInt(v)
+	})
+}
+
+// RENAME
+func (m *Redico) cmdRename(out *redeo.Responder, r *redeo.Request) error {
+	if len(r.Args) != 2 {
+		setDirty(r.Client())
+		return r.WrongNumberOfArgs()
+	}
+	if !m.handleAuth(r.Client(), out) {
+		return nil
+	}
+
+	from := r.Args[0]
+	to := r.Args[1]
+
+	return withTx(m, out, r, func(out *redeo.Responder, ctx *connCtx) {
+		db := m.db(ctx.selectedDB)
+
+		if !db.exists(from) {
+			out.WriteErrorString(msgKeyNotFound)
+			return
+		}
+
+		db.del(to, true)
+		db.stringSet(to, db.stringGet(from))
+		db.del(from, true)
+		out.WriteOK()
+	})
+}
+
+// APPEND
+func (m *Redico) cmdAppend(out *redeo.Responder, r *redeo.Request) error {
+	if len(r.Args) != 2 {
+		setDirty(r.Client())
+		return r.WrongNumberOfArgs()
+	}
+	if !m.handleAuth(r.Client(), out) {
+		return nil
+	}
+
+	key := r.Args[0]
+	value := r.Args[1]
+
+	return withTx(m, out, r, func(out *redeo.Responder, ctx *connCtx) {
+		db := m.db(ctx.selectedDB)
+
+		if !db.exists(key) {
+			out.WriteNil()
+			return
+		}
+
+		newValue := db.stringGet(key) + value
+		db.del(key,true)
+		db.stringSet(key, newValue)
+
+		out.WriteInt(len(newValue))
 	})
 }
