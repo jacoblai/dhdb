@@ -8,15 +8,9 @@ import (
 )
 
 func TestRedico(t *testing.T) {
-	s, err := Run()
-	if err != nil {
-		t.Error(err)
-	}
-	defer s.Close()
-
 	// Configure you application to connect to redis at s.Addr()
 	// Any redis client should work, as long as you use redis commands which
-	c, err := redis.Dial("tcp", s.Addr())
+	c, err := redis.Dial("tcp", "127.0.0.1:6380")
 	if err != nil {
 		t.Error(err)
 	}
@@ -24,29 +18,23 @@ func TestRedico(t *testing.T) {
 	_, err = c.Do("AUTH", "foo", "bar")
 	fmt.Println(err != nil, "no password set")
 
-	s.RequireAuth("nocomment")
 	_, err = c.Do("PING", "foo", "bar")
 	fmt.Println(err != nil, "need AUTH")
 
 	_, err = c.Do("AUTH", "wrongpasswd")
 	fmt.Println(err != nil, "wrong password")
 
-	_, err = c.Do("AUTH", "nocomment")
+	_, err = c.Do("AUTH", "icoolpy.com")
 	fmt.Println(err)
 
 	_, err = c.Do("PING")
 	fmt.Println(err)
 
-	s.Set("incrs", "12")
-	if v, err := redis.Int(c.Do("INCR", "incrs")); err !=nil || v != 13 {
-		t.Error(v,err)
-	}
-
 	r, err := redis.Int(c.Do("DEL", "incrs", "aap"))
-	if err !=nil{
+	if err != nil {
 		t.Error(err)
 	}
-        fmt.Println(r)
+	fmt.Println(r)
 
 	_, err = c.Do("SET", "foo", "bar")
 	if err != nil {
@@ -58,7 +46,7 @@ func TestRedico(t *testing.T) {
 		t.Error("Keys not fire *")
 	}
 
-	if v, err := redis.String(c.Do("GET", "foo"));err ==nil{
+	if v, err := redis.String(c.Do("GET", "foo")); err == nil {
 		fmt.Println(v)
 	}
 
@@ -93,37 +81,41 @@ func TestRedico(t *testing.T) {
 		fmt.Println(val)
 	}
 
-	// You can ask about keys directly, without going over the network.
-	if got, err := s.Get("foo"); err != nil || got != "bar" {
-		t.Error("Didn't get 'bar' back")
-	}
-
-	// Or with a DB id
-	if _, err := s.DB(42).Get("foo"); err != ErrKeyNotFound {
-		t.Error("Didn't use a different DB")
-	}
-
-	if _, err = redis.String(c.Do("SELECT", "5")); err !=nil{
+	if _, err = redis.String(c.Do("SELECT", "5")); err != nil {
 		t.Error(err)
 	}
 
-	if _, err = redis.String(c.Do("SET", "foo", "baz"));err !=nil{
+	if _, err = redis.String(c.Do("SET", "foo", "baz")); err != nil {
 		t.Error(err)
 	}
 
-	// Direct access.
-	got, err := s.Get("foo")
-	fmt.Println("nomal is",got)
-	s.Select(5)
-	got, err = s.Get("foo")
-	fmt.Println("select 5", got)
-
-	// Or use a Check* function which Fail()s if the key is not what we expect
-	// (checks for existence, key type and the value)
-	// s.CheckGet(t, "foo", "bar")
-
-	// Check if there really was only one connection.
-	if s.TotalConnectionCount() != 1 {
-		t.Error("Too many connections made")
+	if _, err = redis.String(c.Do("SELECT", "15")); err != nil {
+		t.Error(err)
 	}
+	fmt.Println("select 15")
+	myv, err := redis.Int(c.Do("RPUSH", "foo1"));
+	if  err !=nil{
+		t.Error(err)
+	}
+	fmt.Println("push finish count")
+	fmt.Println(myv)
+	fmt.Println("pop finish count")
+	av, err := redis.String(c.Do("LPOP","1000"));
+	if  err !=nil{
+		fmt.Println(err)
+	}
+	fmt.Println("pop finish")
+	fmt.Println(av)
+
+	//for i := 0; i < 2; i++ {
+	//	if v, err := redis.String(c.Do("POP")); err == nil {
+	//		fmt.Println("POP")
+	//		fmt.Println(v)
+	//	}
+	//}
+	//if v, err := redis.Strings(c.Do("POP")); err == nil {
+	//	fmt.Println("PUSH")
+	//	fmt.Println(v)
+	//}
+
 }

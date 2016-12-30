@@ -28,6 +28,7 @@ type Redico struct {
 	listen     net.Listener
 	dbs        map[int]*RedicoDB
 	selectedDB int // DB id used in the direct Get(), Set() &c.
+	signal     *sync.Cond
 }
 
 type txCmd func(*redeo.Responder, *connCtx)
@@ -73,6 +74,7 @@ func (m *Redico) Start(port string) error {
 	commandsConnection(m, m.srv)
 	commandsGeneric(m, m.srv)
 	commandsString(m, m.srv)
+	commandsList(m, m.srv)
 
 	go func() {
 		m.srv.Serve(m.listen)

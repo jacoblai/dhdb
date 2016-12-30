@@ -5,19 +5,23 @@ import (
 	"math"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 )
 
 const (
-	msgWrongType = "WRONGTYPE Operation against a key holding the wrong kind of value"
-	msgInvalidInt = "ERR value is not an integer or out of range"
-	msgInvalidFloat = "ERR value is not a valid float"
-	msgInvalidMinMax = "ERR min or max is not a float"
+	msgWrongType        = "WRONGTYPE Operation against a key holding the wrong kind of value"
+	msgInvalidInt       = "ERR value is not an integer or out of range"
+	msgInvalidFloat     = "ERR value is not a valid float"
+	msgInvalidMinMax    = "ERR min or max is not a float"
 	msgInvalidRangeItem = "ERR min or max not valid string range item"
-	msgSyntaxError = "ERR syntax error"
-	msgKeyNotFound = "ERR no such key"
-	msgOutOfRange = "ERR index out of range"
-	msgInvalidCursor = "ERR invalid cursor"
-	msgXXandNX = "ERR XX and NX options at the same time are not compatible"
+	msgInvalidTimeout   = "ERR timeout is not an integer or out of range"
+	msgSyntaxError      = "ERR syntax error"
+	msgKeyNotFound      = "ERR no such key"
+	msgOutOfRange       = "ERR index out of range"
+	msgInvalidCursor    = "ERR invalid cursor"
+	msgXXandNX          = "ERR XX and NX options at the same time are not compatible"
+	msgNegTimeout       = "ERR timeout is negative"
 )
 
 // withTx wraps the non-argument-checking part of command handling code in
@@ -38,6 +42,70 @@ cb txCmd,
 	defer m.Unlock()
 	cb(out, ctx)
 	return nil
+}
+
+// blockCmd is executed returns whether it is done
+type blockCmd func(*redeo.Responder, *connCtx) bool
+
+// blocking keeps trying a command until the callback returns true. Calls
+// onTimeout after the timeout (or when we call this in a transaction).
+func blocking(
+m *Redico,
+out *redeo.Responder,
+r *redeo.Request,
+timeout time.Duration,
+cb blockCmd,
+onTimeout func(out *redeo.Responder),
+) {
+	var (
+		ctx = getCtx(r.Client())
+		dl  *time.Timer
+		dlc <-chan time.Time
+	)
+	if inTx(ctx) {
+		addTxCmd(ctx, func(out *redeo.Responder, ctx *connCtx) {
+			if !cb(out, ctx) {
+				onTimeout(out)
+			}
+		})
+		out.WriteInlineString("QUEUED")
+		return
+	}
+	if timeout != 0 {
+		dl = time.NewTimer(timeout)
+		defer dl.Stop()
+		dlc = dl.C
+	}
+
+	m.Lock()
+	defer m.Unlock()
+	for {
+		done := cb(out, ctx)
+		if done {
+			return
+		}
+		// there is no cond.WaitTimeout(), so hence the the goroutine to wait
+		// for a timeout
+		var (
+			wg     sync.WaitGroup
+			wakeup = make(chan struct{}, 1)
+		)
+		wg.Add(1)
+		go func() {
+			m.signal.Wait()
+			wakeup <- struct{}{}
+			wg.Done()
+		}()
+		select {
+		case <-wakeup:
+		case <-dlc:
+			onTimeout(out)
+			m.signal.Broadcast() // to kill the wakeup go routine
+			wg.Wait()
+			return
+		}
+		wg.Wait()
+	}
 }
 
 // formatFloat formats a float the way redis does (sort-of)
