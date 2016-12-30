@@ -93,19 +93,19 @@ func TestRedico(t *testing.T) {
 		t.Error(err)
 	}
 	fmt.Println("select 15")
-	myv, err := redis.Int(c.Do("RPUSH", "foo1"));
+	myv, err := redis.Int(c.Do("RPUSH", "foo2"));
 	if  err !=nil{
 		t.Error(err)
 	}
 	fmt.Println("push finish count")
 	fmt.Println(myv)
-	fmt.Println("pop finish count")
-	av, err := redis.String(c.Do("LPOP","1000"));
-	if  err !=nil{
-		fmt.Println(err)
-	}
-	fmt.Println("pop finish")
-	fmt.Println(av)
+	//fmt.Println("pop finish count")
+	//av, err := redis.String(c.Do("LPOP"));
+	//if  err !=nil{
+	//	fmt.Println(err)
+	//}
+	//fmt.Println("pop finish")
+	//fmt.Println(av)
 
 	//for i := 0; i < 2; i++ {
 	//	if v, err := redis.String(c.Do("POP")); err == nil {

@@ -8,6 +8,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"bytes"
 	"encoding/binary"
+	"errors"
 )
 
 // RedisDB holds a single (numbered) Redis database.
@@ -132,14 +133,14 @@ func (db *RedicoDB) stringSet(k, v string) {
 func (db *RedicoDB) Push(v []string) error {
 	iter := db.leveldb.NewIterator(nil, nil)
 	defer iter.Release()
-	iter.Last()
+	ok := iter.Last()
 	err := iter.Error()
 	if err != nil {
 		return err
 	}
 	var nk uint64
 	nk = 0
-	if iter.Key() != nil {
+	if ok {
 		nk = binary.BigEndian.Uint64(iter.Key())
 	}
 	kb := make([]byte, 8)
@@ -154,10 +155,15 @@ func (db *RedicoDB) Push(v []string) error {
 func (db *RedicoDB) Pop() (string, error) {
 	iter := db.leveldb.NewIterator(nil, nil)
 	defer iter.Release()
-	iter.First()
+	ok := iter.First()
 	err := iter.Error()
 	if err != nil {
 		return "", err
 	}
-	return string(iter.Value()), nil
+	if !ok {
+		return "",errors.New("queue 0 items")
+	}
+	val := iter.Value()
+	db.del(string(iter.Key()),true)
+	return string(val), nil
 }
