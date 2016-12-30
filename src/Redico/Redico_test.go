@@ -107,15 +107,4 @@ func TestRedico(t *testing.T) {
 	//fmt.Println("pop finish")
 	//fmt.Println(av)
 
-	//for i := 0; i < 2; i++ {
-	//	if v, err := redis.String(c.Do("POP")); err == nil {
-	//		fmt.Println("POP")
-	//		fmt.Println(v)
-	//	}
-	//}
-	//if v, err := redis.Strings(c.Do("POP")); err == nil {
-	//	fmt.Println("PUSH")
-	//	fmt.Println(v)
-	//}
-
 }

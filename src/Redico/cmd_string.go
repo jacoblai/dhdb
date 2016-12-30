@@ -80,7 +80,7 @@ func (m *Redico) cmdSet(out *redeo.Responder, r *redeo.Request) error {
 			}
 		}
 
-		db.del(key, true) // be sure to remove existing values of other type keys.
+		db.del(key) // be sure to remove existing values of other type keys.
 		// a vanilla SET clears the expire
 		db.stringSet(key, value)
 		//if expire != 0 {
@@ -160,9 +160,9 @@ func (m *Redico) cmdRename(out *redeo.Responder, r *redeo.Request) error {
 			return
 		}
 
-		db.del(to, true)
+		db.del(to)
 		db.stringSet(to, db.stringGet(from))
-		db.del(from, true)
+		db.del(from)
 		out.WriteOK()
 	})
 }
@@ -189,7 +189,7 @@ func (m *Redico) cmdAppend(out *redeo.Responder, r *redeo.Request) error {
 		}
 
 		newValue := db.stringGet(key) + value
-		db.del(key,true)
+		db.del(key)
 		db.stringSet(key, newValue)
 
 		out.WriteInt(len(newValue))

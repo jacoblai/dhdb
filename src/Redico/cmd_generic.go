@@ -30,7 +30,7 @@ func (m *Redico) cmdDel(out *redeo.Responder, r *redeo.Request) error {
 			if db.exists(key) {
 				count++
 			}
-			db.del(key, true) // delete expire
+			db.del(key) // delete expire
 		}
 		out.WriteInt(count)
 	})

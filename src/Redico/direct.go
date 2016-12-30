@@ -49,7 +49,7 @@ func (db *RedicoDB) Set(k, v string) error {
 	if db.exists(k) {
 		return ErrKeyNotFound
 	}
-	db.del(k, true) // Remove expire
+	db.del(k) // Remove expire
 	db.stringSet(k, v)
 	return nil
 }
@@ -66,7 +66,7 @@ func (db *RedicoDB) Del(k string) bool {
 	if !db.exists(k) {
 		return false
 	}
-	db.del(k, true)
+	db.del(k)
 	return true
 }
 

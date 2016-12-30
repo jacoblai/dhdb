@@ -103,7 +103,7 @@ func (db *RedicoDB) keyRange(min string, max string) []string {
 	return keys
 }
 
-func (db *RedicoDB) del(k string, delTTL bool) {
+func (db *RedicoDB) del(k string) {
 	if !db.exists(k) {
 		return
 	}
@@ -164,6 +164,6 @@ func (db *RedicoDB) Pop() (string, error) {
 		return "",errors.New("queue 0 items")
 	}
 	val := iter.Value()
-	db.del(string(iter.Key()),true)
+	db.del(string(iter.Key()))
 	return string(val), nil
 }
