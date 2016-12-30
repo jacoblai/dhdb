@@ -1,4 +1,4 @@
-package Redico
+package Redico_test
 
 import (
 	"github.com/garyburd/redigo/redis"
