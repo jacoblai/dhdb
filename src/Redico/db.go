@@ -26,14 +26,7 @@ func newRedicoDB(id int, l *sync.Mutex) RedicoDB {
 		DbPath: datapath + "/data/" + strconv.Itoa(id),
 	}
 	o := &opt.Options{
-		DisableBlockCache:      true,
-		BlockRestartInterval:   5,
-		BlockSize:              80,
-		Compression:            opt.NoCompression,
-		OpenFilesCacheCapacity: -1,
-		Strict:                 opt.StrictAll,
-		WriteBuffer:            1000,
-		CompactionTableSize:    2000,
+		Compression: opt.NoCompression,
 	}
 	ndb, err := leveldb.OpenFile(rdb.DbPath, o)
 	if err != nil {
@@ -161,7 +154,7 @@ func (db *RedicoDB) Pop() (string, error) {
 		return "", err
 	}
 	if !ok {
-		return "",errors.New("queue 0 items")
+		return "", errors.New("queue 0 items")
 	}
 	val := iter.Value()
 	db.del(string(iter.Key()))
