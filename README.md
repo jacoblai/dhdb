@@ -13,11 +13,13 @@ DHDB is a high performace key-value(key-string, List-keys) NoSQL database, __an 
 * Persistent queue service
 * Android or OpenWrt os supported (ARM/MIPS)
 
-## redis clients supported [Let's go...](https://redis.io/clients)
+## redis clients supported 
+
+[All redis clients supported](https://redis.io/clients)
 
 ## Windows executable
 
-Download from here: https://github.com/jacoblai/dhdb/tree/master/dhdb-bin
+[Download dhdb from here (Windows,Mac,Linux,Android,OpenWrt)](https://github.com/jacoblai/dhdb/tree/master/dhdb-bin)
 
 ## Executable flags
 
