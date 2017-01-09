@@ -19,6 +19,12 @@ DHDB is a high performace key-value(key-string, List-keys) NoSQL database, __an 
 
 Download from here: https://github.com/jacoblai/dhdb-bin
 
+## Executable flags
+
+ - flags
+   - p -- dhdb server host port number (default 6380)
+   - a -- dhdb client auth password (default icoolpy.com)
+
 ## DHDB supported redis implemented commands
 
  - Connection (complete)
@@ -47,6 +53,86 @@ Download from here: https://github.com/jacoblai/dhdb-bin
  - Key 
    - KEYSSTART
    - KEYSRANGE
+   
+## DHDB redigo client sample
+
+## connection
+```
+import (
+	"github.com/garyburd/redigo/redis"
+	"fmt"
+)
+
+var RedisClient     *redis.Pool
+func main() {
+ RedisClient = &redis.Pool{
+		MaxIdle:  5,
+		MaxActive:   5,
+		IdleTimeout: 180 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial("tcp", "127.0.0.1:6380")
+			if err != nil {
+				return nil, err
+			}
+			_, err = c.Do("AUTH", "icoolpy.com")
+			fmt.Println(err)
+			return c, nil
+		},
+	}
+}
+```
+## SET
+```
+c := RedisClient.Get()
+ _, err := c.Do("SET", "foo", "bar","joo", "bar")
+```
+## GET 
+```
+	if v, err := redis.String(c.Do("GET", "foo")); err == nil {
+		fmt.Println(v)
+	}
+```
+## KEYS
+```
+ // find all keys start with 'j' word 
+ v, err := redis.Strings(c.Do("KEYS", "j*"));
+	if  err != nil || v[0] != "joo" {
+		fmt.Println("Keys not fire *")
+	}
+```
+## KEYSSTART (sreach keys from goleveldb Iterator not suport regexp) 
+```
+ v, err := redis.Strings(c.Do("KEYSSTART", "jo"));
+	if  err == nil {
+		fmt.Println("KEYSSTART")
+		for _, val := range v {
+			fmt.Println(val)
+		}
+	}
+```
+
+## KEYSRANGE (sreach keys from goleveldb Iterator suport range datetime keys express)
+```
+//gen data 
+tm, _ := time.Parse(time.RFC3339Nano, "2017-01-09T14:10:43.678Z")
+	for i := 0; i < 10; i++ {
+		key := tm.Add(time.Second * time.Duration(i))
+		nkey := key.Format(time.RFC3339Nano)
+		var nb []byte
+		for _, r := range "1,2," {
+			nb = append(nb, byte(r))
+		}
+		for _, r := range nkey {
+			nb = append(nb, byte(r))
+		}
+		_, err = c.Do("SET", string(nb), "")
+	}
+//sreach range keys
+v, _ := redis.Strings(c.Do("KEYSRANGE", "1,2,2017-01-09T14:10:41", "1,2,2017-01-09T14:11:46"))
+	for _, val := range v {
+		fmt.Println(val)
+	}
+```
 
 ## Authors
 
@@ -54,5 +140,5 @@ Download from here: https://github.com/jacoblai/dhdb-bin
 
 ## Thanks
 
-* syndtr, https://github.com/syndtr/goleveldb
+* syndtr, github.com/syndtr/goleveldb
 * bsm, github.com/bsm/redeo
