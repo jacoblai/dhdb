@@ -17,7 +17,7 @@ DHDB is a high performace key-value(key-string, List-keys) NoSQL database, __an 
 
 ## Windows executable
 
-Download from here: https://github.com/jacoblai/dhdb-bin
+Download from here: https://github.com/jacoblai/dhdb/tree/master/dhdb-bin
 
 ## Executable flags
 
