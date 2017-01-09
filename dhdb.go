@@ -37,12 +37,12 @@ func main() {
 	fmt.Println("Power By ICOOLPY.COM")
 
 	signalChan := make(chan os.Signal, 1)
-	cleanupDone := make(chan bool)
+	cleanupDone := make(chan struct{})
 	signal.Notify(signalChan, os.Interrupt)
 	go func() {
 		for _ = range signalChan {
 			redServer.Close()
-			cleanupDone <- true
+			close(cleanupDone)
 		}
 	}()
 	<-cleanupDone
