@@ -7,12 +7,9 @@ import (
 	"time"
 )
 
-var (
-	RedisClient     *redis.Pool
-)
+var RedisClient     *redis.Pool
 
 func TestRedico(t *testing.T) {
-	// 建立连接池
 	RedisClient = &redis.Pool{
 		MaxIdle:  5,
 		MaxActive:   5,

@@ -17,7 +17,7 @@ var dhdbVersion = "0.0.1"
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	var (
-		port = flag.Int("p", 6380, "dhdb port munber")
+		port = flag.Int("p", 6380, "dhdb server host port number")
 		pass = flag.String("a", "icoolpy.com", "dhdb client auth password")
 	)
 	flag.Parse()
