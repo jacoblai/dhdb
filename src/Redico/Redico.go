@@ -124,6 +124,9 @@ func (m *Redico) Close() {
 		return
 	}
 	m.srv.Close()
+	for _,v := range m.dbs{
+		v.leveldb.Close()
+	}
 	<-m.closed
 	m.listen = nil
 }

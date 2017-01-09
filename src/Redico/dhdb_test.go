@@ -7,50 +7,69 @@ import (
 	"time"
 )
 
+var (
+	RedisClient     *redis.Pool
+)
+
 func TestRedico(t *testing.T) {
-	// Configure you application to connect to redis at s.Addr()
-	// Any redis client should work, as long as you use redis commands which
-	c, err := redis.Dial("tcp", "127.0.0.1:6380")
-	if err != nil {
-		t.Error(err)
+	// 建立连接池
+	RedisClient = &redis.Pool{
+		MaxIdle:  5,
+		MaxActive:   5,
+		IdleTimeout: 180 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial("tcp", "127.0.0.1:6380")
+			if err != nil {
+				return nil, err
+			}
+			_, err = c.Do("AUTH", "icoolpy.com")
+			fmt.Println(err)
+			return c, nil
+		},
 	}
+	//c, err := redis.Dial("tcp", "127.0.0.1:6380")
+	//if err != nil {
+	//	t.Error(err)
+	//}
 
-	_, err = c.Do("AUTH", "foo", "bar")
-	fmt.Println(err != nil, "no password set")
+	//_, err = c.Do("AUTH", "foo", "bar")
+	//fmt.Println(err != nil, "no password set")
+	//
+	//_, err = c.Do("PING", "foo", "bar")
+	//fmt.Println(err != nil, "need AUTH")
+	//
+	//_, err = c.Do("AUTH", "wrongpasswd")
+	//fmt.Println(err != nil, "wrong password")
 
-	_, err = c.Do("PING", "foo", "bar")
-	fmt.Println(err != nil, "need AUTH")
+	c1 := RedisClient.Get()
+	//_, err := c1.Do("AUTH", "icoolpy.com")
+	//fmt.Println(err)
 
-	_, err = c.Do("AUTH", "wrongpasswd")
-	fmt.Println(err != nil, "wrong password")
-
-	_, err = c.Do("AUTH", "icoolpy.com")
+	_, err := c1.Do("PING")
 	fmt.Println(err)
 
-	_, err = c.Do("PING")
-	fmt.Println(err)
-
-	r, err := redis.Int(c.Do("DEL", "incrs", "aap"))
+	r, err := redis.Int(c1.Do("DEL", "incrs", "aap"))
 	if err != nil {
 		t.Error(err)
 	}
 	fmt.Println(r)
 
-	_, err = c.Do("SET", "foo", "bar")
+	c2 := RedisClient.Get()
+	_, err = c2.Do("SET", "foo", "bar")
 	if err != nil {
 		t.Error(err)
 	}
 
-	_, err = c.Do("SET", "joo", "bar")
-	if v, err := redis.Strings(c.Do("KEYS", "j*")); err != nil || v[0] != "joo" {
+	_, err = c2.Do("SET", "joo", "bar")
+	if v, err := redis.Strings(c2.Do("KEYS", "j*")); err != nil || v[0] != "joo" {
 		t.Error("Keys not fire *")
 	}
 
-	if v, err := redis.String(c.Do("GET", "foo")); err == nil {
+	if v, err := redis.String(c2.Do("GET", "foo")); err == nil {
 		fmt.Println(v)
 	}
 
-	if v, err := redis.Strings(c.Do("KEYSSTART", "jo")); err == nil {
+	if v, err := redis.Strings(c2.Do("KEYSSTART", "jo")); err == nil {
 		fmt.Println("KEYSSTART")
 		for _, val := range v {
 			fmt.Println(val)
@@ -72,39 +91,47 @@ func TestRedico(t *testing.T) {
 		for _, r := range nkey {
 			nb = append(nb, byte(r))
 		}
-		_, err = c.Do("SET", string(nb), "")
+		_, err = c2.Do("SET", string(nb), "")
 	}
-	v, err := redis.Strings(c.Do("KEYSRANGE", "1,2,2013-06-05T14:10:41", "1,2,2013-06-05T14:11:46"))
+	v, err := redis.Strings(c2.Do("KEYSRANGE", "1,2,2013-06-05T14:10:41", "1,2,2013-06-05T14:11:46"))
 	fmt.Println("KEYSRANGE")
 	fmt.Println(err)
 	for _, val := range v {
 		fmt.Println(val)
 	}
 
-	if _, err = redis.String(c.Do("SELECT", "5")); err != nil {
+	if _, err = redis.String(c2.Do("SELECT", "5")); err != nil {
 		t.Error(err)
 	}
 
-	if _, err = redis.String(c.Do("SET", "foo", "baz")); err != nil {
+	if _, err = redis.String(c2.Do("SET", "foo", "baz")); err != nil {
 		t.Error(err)
 	}
 
-	if _, err = redis.String(c.Do("SELECT", "15")); err != nil {
-		t.Error(err)
-	}
 	fmt.Println("select 15")
-	myv, err := redis.Int(c.Do("RPUSH", "foo2"));
+	fmt.Println("pop start")
+	c3 := RedisClient.Get()
+	if _, err = redis.String(c3.Do("SELECT", "15")); err != nil {
+		t.Error(err)
+	}
+	myv, err := redis.Int(c3.Do("RPUSH", "foo2","bar3"));
 	if  err !=nil{
 		t.Error(err)
 	}
 	fmt.Println("push finish count")
 	fmt.Println(myv)
-	//fmt.Println("pop finish count")
-	//av, err := redis.String(c.Do("LPOP"));
-	//if  err !=nil{
-	//	fmt.Println(err)
-	//}
-	//fmt.Println("pop finish")
-	//fmt.Println(av)
-
+	c4 := RedisClient.Get()
+	if _, err = redis.String(c4.Do("SELECT", "15")); err != nil {
+		t.Error(err)
+	}
+	for i := 0; i < 3; i++ {
+		av, err := redis.String(c4.Do("LPOP"));
+		if  err !=nil{
+			fmt.Println("pop end of queu be show err msg")
+			fmt.Println(err)
+			break;
+		}
+		fmt.Println("pop finish", i)
+		fmt.Println(av)
+	}
 }
