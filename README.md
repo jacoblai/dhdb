@@ -50,7 +50,7 @@ DHDB is a high performace key-value(key-string, List-keys) NoSQL database, __an 
    - LPOP
    - RPUSH
 
-## DHDB customer commands
+## DHDB custom commands
 
  - Key 
    - KEYSSTART
