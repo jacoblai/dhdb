@@ -45,7 +45,10 @@ func (m *Redico) cmdRpush(out *redeo.Responder, r *redeo.Request) error {
 	return withTx(m, out, r, func(out *redeo.Responder, ctx *connCtx) {
 		db := m.db(ctx.selectedDB)
 
-		db.Push(args)
+		err := db.Push(args)
+		if err != nil {
+			out.WriteError(err)
+		}
 		out.WriteInt(len(r.Args))
 	})
 }
