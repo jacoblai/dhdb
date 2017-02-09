@@ -30,7 +30,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer redServer.Close()
 	redServer.RequireAuth(*pass)
 	fmt.Println("DHDB Version:", dhdbVersion)
 	fmt.Println("DHDB Port:", strconv.Itoa(*port))
@@ -41,6 +40,7 @@ func main() {
 	signal.Notify(signalChan, os.Interrupt)
 	go func() {
 		for _ = range signalChan {
+			redServer.Close()
 			close(cleanupDone)
 		}
 	}()
