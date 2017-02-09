@@ -41,7 +41,6 @@ func main() {
 	signal.Notify(signalChan, os.Interrupt)
 	go func() {
 		for _ = range signalChan {
-			redServer.Close()
 			close(cleanupDone)
 		}
 	}()
